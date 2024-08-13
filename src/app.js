@@ -8,13 +8,6 @@ import 'dotenv/config';
 import bodyParser from 'body-parser';
 //import path from 'path';
 
-// MySQL 데이터베이스 연결 설정
-const db = await mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-});
 
 // Multer 설정 (파일 업로드를 위한 미들웨어)
 const upload = multer({ dest: 'uploads/' });
