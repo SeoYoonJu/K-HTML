@@ -35,51 +35,32 @@ app.use(bodyParser.json());
 app.post('/upload', upload.single('image'), async (req, res) => {
   try {
     const imagePath = req.file.path;
-    const imageData = fs.readFileSync(imagePath);
+        const imageData = fs.readFileSync(imagePath);
+        const prompt = req.body.prompt;
 
-    // 이미지 데이터를 데이터베이스에 저장
-    const query = 'INSERT INTO image (data) VALUES (?)';
-    const [result] = await db.execute(query, [imageData]);
 
-    fs.unlinkSync(imagePath); // 임시 파일 삭제
-
-    const imageId =  result.insertId
-
-    try {
-        const query = 'SELECT data FROM image WHERE id = ?';
-        const [rows] = await db.execute(query, [imageId]);
+        // 이미지 데이터를 데이터베이스에 저장
+        const base64Image = Buffer.from(imageData).toString('base64');
     
-        if (rows.length > 0) {
-          const imageData = rows[0].data;
-    
-          // 이미지 데이터를 Base64로 인코딩
-          const base64Image = Buffer.from(imageData).toString('base64');
-    
-          // OpenAI API 호출
-          const response = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-              {
-                role: "user",
-                content: [
-                  { type: "text", text: "Tell me the objects you see and tell me how to recycle them. format: 1. item1: how to recycling this item in korea, yongin-si 2. item2: how to recycling this item in korea, yongin-si. The rest are the same as before like 3. 4. 5. .... For your information, url of bulky waste recycling service is https://bbegi.com/ Please tell in Korean" },
-                  {
-                    type: "image_url",
-                    image_url: { "url": `data:image/jpeg;base64,${base64Image}` },
-                  },
-                ],
-              },
-            ],
-          });
-          
-          res.json(response.choices[0].message.content);
-        } else {
-          res.status(404).json({ error: 'Image not found' });
-        }
-      } catch (error) {
-        console.error('Error fetching image:', error);
-        res.status(500).json({ error: 'Failed to fetch image' });
-      }
+        // OpenAI API 호출
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: "Tell me the objects you see and tell me how to recycle them. format: 1. item1: how to recycling this item in korea, yongin-si 2. item2: how to recycling this item in korea, yongin-si. The rest are the same as before like 3. 4. 5. .... For your information, url of bulky waste recycling service is https://bbegi.com/ Please tell in Korean" },
+                {
+                  type: "image_url",
+                  image_url: { "url": `data:image/jpeg;base64,${base64Image}` },
+                },
+              ],
+            },
+          ],
+        });
+        
+        res.json(response.choices[0].message.content);
+
   } catch (error) {
     console.error('Error uploading image:', error);
     res.status(500).json({ error: 'Failed to upload image' });
